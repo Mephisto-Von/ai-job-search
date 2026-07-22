@@ -1,0 +1,338 @@
+// Data source: Glassdoor public job pages. No authentication required.
+// Search returns HTML job cards; detail returns a single job's HTML.
+// We parse with regex similar to the other search skills.
+
+export const SEARCH_URL = "https://www.glassdoor.com/Job/jobs.htm"
+export const DETAIL_URL = "https://www.glassdoor.com/viewjob"
+export const REVIEWS_URL = "https://www.glassdoor.com/Reviews/index.htm"
+
+export function writeError(error: string, code: string): void {
+  process.stderr.write(JSON.stringify({ error, code }) + "\n")
+}
+
+const UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
+  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+/** Fetch HTML with exponential backoff on 429/5xx. Returns "" on a 404. */
+export async function htmlFetch(url: string): Promise<string> {
+  const maxRetries = 6
+  let delay = 500
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": UA,
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(15000),
+    })
+    if (response.status === 429 || response.status >= 500) {
+      if (attempt === maxRetries) {
+        throw new Error(`Request failed: ${response.status} ${response.statusText}`)
+      }
+      const jitter = Math.floor(Math.random() * 500)
+      await new Promise((r) => setTimeout(r, delay + jitter))
+      delay = Math.min(delay * 2, 8000)
+      continue
+    }
+    if (response.status === 404) return ""
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.status} ${response.statusText}`)
+    }
+    return response.text()
+  }
+  throw new Error("Request failed after max retries")
+}
+
+export interface JobCard {
+  id: string
+  title: string
+  company: string | null
+  location: string | null
+  date: string | null
+  url: string
+  salary: string | null
+  rating: number | null
+  snippet: string | null
+}
+
+export interface JobDetail extends JobCard {
+  description: string | null
+  jobType: string | null
+  salary: string | null
+  benefits: string[]
+  applyUrl: string | null
+  companyRating: number | null
+  companyReviews: number | null
+  ceoApproval: boolean | null
+  recommendToFriend: number | null
+}
+
+export interface CompanyReview {
+  company: string
+  rating: number | null
+  reviews: number | null
+  pros: string[]
+  cons: string[]
+  ceoName: string | null
+  ceoApproval: boolean | null
+  recommendToFriend: number | null
+}
+
+function numericEntity(cp: number): string {
+  return cp >= 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : ""
+}
+
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, dec) => numericEntity(parseInt(dec, 10)))
+    .replace(/&#[xX]([0-9a-fA-F]+);/g, (_, hex) => numericEntity(parseInt(hex, 16)))
+    .replace(/&nbsp;/g, " ")
+}
+
+function stripTags(html: string): string {
+  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+}
+
+function clean(html: string): string {
+  return decodeHtmlEntities(stripTags(html))
+}
+
+/**
+ * Parse the search response: a list of job cards from Glassdoor's search results.
+ */
+export function parseJobCards(html: string): JobCard[] {
+  const results: JobCard[] = []
+
+  // Glassdoor uses various card structures
+  const cardPatterns = [
+    // Pattern 1: data-id attribute
+    /<li[^>]*data-id="([^"]+)"[^>]*class="[^"]*job_listing[^"]*"/gi,
+    // Pattern 2: data-test attribute with job ID
+    /<li[^>]*data-test="([^"]+)"[^>]*class="[^"]*job_listing[^"]*"/gi,
+    // Pattern 3: id="job_" prefix
+    /<div[^>]*id="job_(\d+)"[^>]*>/gi,
+  ]
+
+  for (const pattern of cardPatterns) {
+    let match: RegExpExecArray | null
+    while ((match = pattern.exec(html)) !== null) {
+      const id = match[1]
+      if (!id) continue
+
+      // Extract surrounding context for this card
+      const startIdx = Math.max(0, match.index - 500)
+      const endIdx = Math.min(html.length, match.index + 2000)
+      const cardHtml = html.slice(startIdx, endIdx)
+
+      // Title
+      const titleMatch = cardHtml.match(/class="[^"]*jobTitle[^"]*"[^>]*>([\s\S]*?)<\/a>/i) ||
+                         cardHtml.match(/class="[^"]*job-listing__link[^"]*"[^>]*>([\s\S]*?)<\/a>/i)
+      const title = titleMatch ? clean(titleMatch[1]) : null
+      if (!title) continue
+
+      // Company
+      const companyMatch = cardHtml.match(/class="[^"]*companyName[^"]*"[^>]*>([\s\S]*?)<\/span>/i) ||
+                           cardHtml.match(/class="[^"]*job-listing__company-name[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+      const company = companyMatch ? clean(companyMatch[1]) : null
+
+      // Location
+      const locMatch = cardHtml.match(/class="[^"]*companyLocation[^"]*"[^>]*>([\s\S]*?)<\/span>/i) ||
+                       cardHtml.match(/class="[^"]*job-listing__location[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+      const location = locMatch ? clean(locMatch[1]) : null
+
+      // Date
+      const dateMatch = cardHtml.match(/class="[^"]*date[^"]*"[^>]*>([\s\S]*?)<\/span>/i) ||
+                        cardHtml.match(/class="[^"]*job-listing__date[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+      const date = dateMatch ? clean(dateMatch[1]) : null
+
+      // Salary
+      const salaryMatch = cardHtml.match(/class="[^"]*salary[^"]*"[^>]*>([\s\S]*?)<\/span>/i) ||
+                          cardHtml.match(/class="[^"]*job-listing__salary[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+      const salary = salaryMatch ? clean(salaryMatch[1]) : null
+
+      // Rating
+      const ratingMatch = cardHtml.match(/class="[^"]*rating[^"]*"[^>]*>([\s\S]*?)<\/span>/i) ||
+                          cardHtml.match(/data-test="[^"]*rating[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+      const rating = ratingMatch ? parseFloat(clean(ratingMatch[1])) : null
+
+      // Snippet
+      const snippetMatch = cardHtml.match(/class="[^"]*snippet[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
+                           cardHtml.match(/class="[^"]*job-listing__snippet[^"]*"[^>]*>([\s\S]*?)<\/div>/i)
+      const snippet = snippetMatch ? clean(snippetMatch[1]) : null
+
+      // URL
+      const urlMatch = cardHtml.match(/href="(\/job-listing\/[^"]+)"/i) ||
+                       cardHtml.match(/href="(\/viewjob\?[^"]+)"/i)
+      const url = urlMatch ? `https://www.glassdoor.com${decodeHtmlEntities(urlMatch[1])}` :
+                  `https://www.glassdoor.com/viewjob?jobListingId=${id}`
+
+      results.push({
+        id,
+        title,
+        company,
+        location,
+        date,
+        url,
+        salary,
+        rating,
+        snippet,
+      })
+    }
+    if (results.length > 0) break
+  }
+
+  return results
+}
+
+/** Parse the single-job detail page. */
+export function parseJobDetail(html: string, id: string): JobDetail {
+  // Title
+  const titleMatch = html.match(/class="[^"]*jobTitle[^"]*"[^>]*>([\s\S]*?)<\/h1>/i) ||
+                     html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
+  const title = titleMatch ? clean(titleMatch[1]) : "(untitled)"
+
+  // Company
+  const companyMatch = html.match(/class="[^"]*companyName[^"]*"[^>]*>([\s\S]*?)<\/a>/i) ||
+                       html.match(/class="[^"]*employerName[^"]*"[^>]*>([\s\S]*?)<\/a>/i)
+  const company = companyMatch ? clean(companyMatch[1]) : null
+
+  // Location
+  const locMatch = html.match(/class="[^"]*companyLocation[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
+                   html.match(/class="[^"]*location[^"]*"[^>]*>([\s\S]*?)<\/div>/i)
+  const location = locMatch ? clean(locMatch[1]) : null
+
+  // Description
+  const descMatch = html.match(/class="[^"]*jobDescription[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
+                    html.match(/id="JobDescription"[^>]*>([\s\S]*?)<\/div>/i)
+  let description: string | null = null
+  if (descMatch) {
+    const withBreaks = descMatch[1]
+      .replace(/<\s*br\s*\/?>/gi, "\n")
+      .replace(/<\/(p|li|ul|ol|div|h\d)>/gi, "\n")
+    description = decodeHtmlEntities(stripTags(withBreaks)).replace(/\n{3,}/g, "\n\n").trim() || null
+  }
+
+  // Job type
+  const jobTypeMatch = html.match(/class="[^"]*jobType[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+  const jobType = jobTypeMatch ? clean(jobTypeMatch[1]) : null
+
+  // Salary
+  const salaryMatch = html.match(/class="[^"]*salary[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+  const salary = salaryMatch ? clean(salaryMatch[1]) : null
+
+  // Benefits
+  const benefits: string[] = []
+  const benefitsMatch = html.match(/class="[^"]*benefits[^"]*"[^>]*>([\s\S]*?)<\/div>/i)
+  if (benefitsMatch) {
+    const items = benefitsMatch[1].match(/<li[^>]*>([\s\S]*?)<\/li>/gi)
+    if (items) {
+      for (const item of items) {
+        const text = clean(item)
+        if (text) benefits.push(text)
+      }
+    }
+  }
+
+  // Company rating
+  const ratingMatch = html.match(/class="[^"]*rating[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+  const companyRating = ratingMatch ? parseFloat(clean(ratingMatch[1])) : null
+
+  // Number of reviews
+  const reviewsMatch = html.match(/class="[^"]*reviews[^"]*"[^>]*>([\s\S]*?)<\/span>/i) ||
+                       html.match(/(\d+)\s*reviews/i)
+  const companyReviews = reviewsMatch ? parseInt(clean(reviewsMatch[1])) : null
+
+  // CEO approval
+  const ceoMatch = html.match(/class="[^"]*ceoApproval[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+  const ceoApproval = ceoMatch ? clean(ceoMatch[1]).toLowerCase().includes("yes") : null
+
+  // Recommend to friend
+  const recommendMatch = html.match(/class="[^"]*recommend[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+  const recommendToFriend = recommendMatch ? parseInt(clean(recommendMatch[1])) : null
+
+  // Apply URL
+  const applyMatch = html.match(/class="[^"]*applyButton[^"]*"[^>]*href="([^"]+)"/i) ||
+                     html.match(/id="applyButton"[^>]*href="([^"]+)"/i)
+  const applyUrl = applyMatch ? decodeHtmlEntities(applyMatch[1]) : null
+
+  return {
+    id,
+    title,
+    company,
+    location,
+    date: null,
+    url: `https://www.glassdoor.com/viewjob?jobListingId=${id}`,
+    description,
+    jobType,
+    salary,
+    benefits,
+    applyUrl,
+    companyRating,
+    companyReviews,
+    ceoApproval,
+    recommendToFriend,
+  }
+}
+
+/** Parse company reviews page. */
+export function parseCompanyReviews(html: string, company: string): CompanyReview {
+  // Overall rating
+  const ratingMatch = html.match(/class="[^"]*rating[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+  const rating = ratingMatch ? parseFloat(clean(ratingMatch[1])) : null
+
+  // Number of reviews
+  const reviewsMatch = html.match(/(\d+)\s*reviews/i)
+  const reviews = reviewsMatch ? parseInt(reviewsMatch[1]) : null
+
+  // Pros (from review cards)
+  const pros: string[] = []
+  const prosMatch = html.match(/Pros:<\/span>([\s\S]*?)<\/div>/gi)
+  if (prosMatch) {
+    for (const match of prosMatch) {
+      const text = clean(match.replace(/Pros:<\/span>/i, ""))
+      if (text) pros.push(text)
+    }
+  }
+
+  // Cons (from review cards)
+  const cons: string[] = []
+  const consMatch = html.match(/Cons:<\/span>([\s\S]*?)<\/div>/gi)
+  if (consMatch) {
+    for (const match of consMatch) {
+      const text = clean(match.replace(/Cons:<\/span>/i, ""))
+      if (text) cons.push(text)
+    }
+  }
+
+  // CEO
+  const ceoMatch = html.match(/class="[^"]*ceoName[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+  const ceoName = ceoMatch ? clean(ceoMatch[1]) : null
+
+  // CEO approval
+  const ceoApprovalMatch = html.match(/class="[^"]*ceoApproval[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+  const ceoApproval = ceoApprovalMatch ? clean(ceoApprovalMatch[1]).toLowerCase().includes("yes") : null
+
+  // Recommend to friend
+  const recommendMatch = html.match(/class="[^"]*recommend[^"]*"[^>]*>([\s\S]*?)<\/span>/i)
+  const recommendToFriend = recommendMatch ? parseInt(clean(recommendMatch[1])) : null
+
+  return {
+    company,
+    rating,
+    reviews,
+    pros,
+    cons,
+    ceoName,
+    ceoApproval,
+    recommendToFriend,
+  }
+}

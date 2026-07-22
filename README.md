@@ -81,7 +81,7 @@ cd ai-job-search
 PowerShell:
 
 ```powershell
-$tools = @("jobbank-search", "jobdanmark-search", "jobindex-search", "jobnet-search", "linkedin-search", "freehire-search")
+$tools = @("jobbank-search", "jobdanmark-search", "jobindex-search", "jobnet-search", "linkedin-search", "freehire-search", "indeed-search", "glassdoor-search", "stepstone-search", "pakistan-search", "india-search")
 foreach ($tool in $tools) {
   Push-Location ".agents/skills/$tool/cli"
   bun install
@@ -92,7 +92,7 @@ foreach ($tool in $tools) {
 Bash / zsh / Git Bash:
 
 ```bash
-for tool in jobbank-search jobdanmark-search jobindex-search jobnet-search linkedin-search freehire-search; do
+for tool in jobbank-search jobdanmark-search jobindex-search jobnet-search linkedin-search freehire-search indeed-search glassdoor-search stepstone-search pakistan-search india-search; do
   (cd .agents/skills/$tool/cli && bun install)
 done
 ```
@@ -135,7 +135,7 @@ Postings are treated as untrusted input (the workflow follows no instructions em
 
 ## Other commands
 
-`/setup`, `/scrape`, and `/apply` form the core workflow. Ten more commands extend it once your profile is in place:
+`/setup`, `/scrape`, and `/apply` form the core workflow. Fourteen more commands extend it once your profile is in place:
 
 - **`/interview`** preps you for a scheduled interview on a tracked application. It builds a stage-specific prep pack from the application's archive (the exact posting, the CV and cover letter the interviewer actually read, feedback recorded from earlier rounds), researches the company and interviewers with a verify-before-use rule, maps likely questions to your STAR examples, and offers a mock interview following the roleplay protocol in `07-interview-prep.md`. Gaps get honest bridge answers, never invented experience.
 - **`/outcome`** records what happened to an application - interview stages, offers, rejections, silence. It archives the submitted CV, cover letter, and posting text into `documents/applications/<company>_<role>/`, keeps `outcome.md` in the format `/setup` Path A parses, and updates the tracker. It also owns the stretch before there is an outcome to record: `/outcome followup` surfaces open applications that have gone quiet (default 10 days), drafts a short channel-appropriate follow-up in your writing style using only claims from the materials you already submitted (drafts only, never sends; at most twice per application), and offers a thank-you note in the same turn an interview stage is recorded. Once a few applications resolve, it points you back to `/setup` to calibrate the fit framework from what actually got interviews.
@@ -147,6 +147,15 @@ Postings are treated as untrusted input (the workflow follows no instructions em
 - **`/html-report`** generates a self-contained HTML dashboard from `job_search_tracker.csv` and the application archives — stat cards, status/sector/channel/funnel charts (inline SVG, no external dependencies), and a filterable applications table. Opens directly in a browser, fully offline. Re-run it any time after `/outcome` adds new entries.
 - **`/add-template`** registers your own LaTeX CV or cover letter template in place of the stock ones. It captures the template's instructions (compile engine, fonts, style rules, page limit), runs a mandatory test compile, and wires the template into `/apply`. See [LaTeX templates](#latex-templates) below.
 - **`/add-portal`** generates a job-portal search skill for a job board in your market. It investigates the portal (search URL pattern, result structure, access rules), scaffolds the CLI skill from the same structure as the shipped ones, and test-runs a live query before registering. See [Job search tools](#job-search-tools) below.
+- **`/compare-offers`** provides side-by-side comparison of multiple job offers with total compensation analysis, benefits valuation, and qualitative assessment of career growth, work-life balance, and company culture.
+- **`/followup`** drafts professional email follow-ups for applications and interviews, with multiple versions tailored to different scenarios (application follow-up, thank you notes, status checks).
+- **`/referral`** helps you find connections at target companies and provides outreach templates for requesting referrals, from direct connections to cold outreach.
+- **`/portfolio`** generates a personal portfolio website to showcase your projects and skills, with multiple template options and deployment instructions for GitHub Pages, Netlify, or Vercel.
+- **`/salary-negotiate`** provides negotiation scripts, strategies, and tactics for salary negotiations, including email templates, meeting scripts, and responses to common pushback.
+- **`/company-research`** automates deep company research using web sources, covering financial health, culture, recent news, competitive landscape, and interview preparation.
+- **`/networking`** provides networking strategy, event planning, LinkedIn optimization, and relationship building templates for professional networking.
+- **`/interview-scheduler`** tracks and manages interview schedules with calendar integration, preparation checklists, and post-interview tasks.
+- **`/career-path`** analyzes career trajectory, identifies path options (vertical, lateral, technical, leadership, entrepreneurial), and creates development plans.
 
 `/reset` is also available, see [Starting over](#starting-over) below.
 
@@ -168,6 +177,15 @@ ai-job-search/
 │   │   ├── interview.md               # /interview stage-specific prep pack + mock interview
 │   │   ├── html-report.md             # /html-report generate application tracker dashboard
 │   │   ├── notion-sync.md             # /notion-sync one-way pipeline view in a Notion database
+│   │   ├── compare-offers.md          # /compare-offers side-by-side job offer comparison
+│   │   ├── followup.md                # /followup email follow-up drafting
+│   │   ├── referral.md                # /referral find connections at target companies
+│   │   ├── portfolio.md               # /portfolio generate personal portfolio site
+│   │   ├── salary-negotiate.md        # /salary-negotiate negotiation scripts and strategies
+│   │   ├── company-research.md        # /company-research deep company analysis
+│   │   ├── networking.md              # /networking networking strategy and event planning
+│   │   ├── interview-scheduler.md     # /interview-scheduler track and manage interviews
+│   │   ├── career-path.md             # /career-path career planning and path analysis
 │   │   └── reset.md                   # /reset wipe profile data or documents folder
 │   ├── skills/
 │   │   ├── job-application-assistant/  # Core application skill
@@ -188,7 +206,12 @@ ai-job-search/
 │   ├── jobindex-search/               # Jobindex.dk (Denmark)
 │   ├── jobnet-search/                 # Jobnet.dk (Denmark, government portal)
 │   ├── linkedin-search/               # LinkedIn public job listings (country-agnostic)
-│   └── freehire-search/               # freehire.dev tech job aggregator (multi-market, REST API)
+│   ├── freehire-search/               # freehire.dev tech job aggregator (multi-market, REST API)
+│   ├── indeed-search/                 # Indeed job listings (global, salary filters)
+│   ├── glassdoor-search/              # Glassdoor jobs with company reviews and salary data
+│   ├── stepstone-search/              # StepStone job listings (European market: DE, AT, CH, BE, NL)
+│   ├── pakistan-search/               # Pakistani job portals (Rozee.pk, Mustakbil, Indeed Pakistan)
+│   └── india-search/                  # Indian job portals (Naukri.com, Indeed India, Monster India)
 ├── cv/
 │   └── main_example.tex               # moderncv LaTeX template
 ├── cover_letters/
