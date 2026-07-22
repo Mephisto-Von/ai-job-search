@@ -93,3 +93,8 @@ upskill/*.md
 # Build output
 build/dist/
 build/output/
+build/bundled/
+build/windows/
+build/msi/
+build/releases/ai-job-search-*.zip
+build/releases/ai-job-search-*.tar.gz
