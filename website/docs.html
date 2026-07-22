@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - AI Job Search</title>
+    <meta name="description" content="Complete documentation for AI Job Search commands, skills, and configuration.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .docs-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 40px;
+            padding: 100px 0 60px;
+        }
+        .docs-sidebar {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+        .docs-nav {
+            list-style: none;
+        }
+        .docs-nav li {
+            margin-bottom: 5px;
+        }
+        .docs-nav a {
+            display: block;
+            padding: 10px 15px;
+            color: var(--gray);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .docs-nav a:hover, .docs-nav a.active {
+            background: var(--primary);
+            color: white;
+        }
+        .docs-nav .nav-section {
+            font-weight: 700;
+            color: var(--dark);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .docs-content h1 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+        .docs-content h2 {
+            font-size: 1.75rem;
+            margin: 40px 0 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .docs-content h3 {
+            font-size: 1.25rem;
+            margin: 30px 0 15px;
+        }
+        .docs-content p {
+            margin-bottom: 15px;
+            color: var(--gray);
+        }
+        .docs-content code {
+            background: var(--light);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--primary);
+        }
+        .docs-content pre {
+            background: var(--darker);
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+        .docs-content pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        .command-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .command-table th, .command-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .command-table th {
+            background: var(--light);
+            font-weight: 600;
+        }
+        .command-table tr:hover {
+            background: var(--light);
+        }
+        .callout {
+            background: #eef2ff;
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .callout.warning {
+            background: #fef3c7;
+            border-color: var(--warning);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-search"></i> AI Job Search
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html#features">Features</a></li>
+                <li><a href="index.html#portals">Job Portals</a></li>
+                <li><a href="index.html#commands">Commands</a></li>
+                <li><a href="download.html">Download</a></li>
+                <li><a href="docs.html">Docs</a></li>
+                <li><a href="https://github.com/MadsLorentzen/ai-job-search" class="btn-github"><i class="fab fa-github"></i> GitHub</a></li>
+            </ul>
+            <button class="nav-toggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="docs-layout">
+                <aside class="docs-sidebar">
+                    <ul class="docs-nav">
+                        <li class="nav-section">Getting Started</li>
+                        <li><a href="#installation">Installation</a></li>
+                        <li><a href="#setup">Setup</a></li>
+                        <li><a href="#configuration">Configuration</a></li>
+
+                        <li class="nav-section">Core Commands</li>
+                        <li><a href="#cmd-setup">/setup</a></li>
+                        <li><a href="#cmd-scrape">/scrape</a></li>
+                        <li><a href="#cmd-apply">/apply</a></li>
+                        <li><a href="#cmd-rank">/rank</a></li>
+                        <li><a href="#cmd-outcome">/outcome</a></li>
+                        <li><a href="#cmd-interview">/interview</a></li>
+
+                        <li class="nav-section">Advanced Commands</li>
+                        <li><a href="#cmd-compare">/compare-offers</a></li>
+                        <li><a href="#cmd-salary">/salary-negotiate</a></li>
+                        <li><a href="#cmd-company">/company-research</a></li>
+                        <li><a href="#cmd-networking">/networking</a></li>
+                        <li><a href="#cmd-referral">/referral</a></li>
+                        <li><a href="#cmd-followup">/followup</a></li>
+                        <li><a href="#cmd-portfolio">/portfolio</a></li>
+                        <li><a href="#cmd-interview-scheduler">/interview-scheduler</a></li>
+                        <li><a href="#cmd-career-path">/career-path</a></li>
+
+                        <li class="nav-section">Portal Skills</li>
+                        <li><a href="#skill-linkedin">LinkedIn</a></li>
+                        <li><a href="#skill-indeed">Indeed</a></li>
+                        <li><a href="#skill-glassdoor">Glassdoor</a></li>
+                        <li><a href="#skill-jobindex">Jobindex</a></li>
+                        <li><a href="#skill-jobnet">Jobnet</a></li>
+
+                        <li class="nav-section">CLI Tools</li>
+                        <li><a href="#cli-indeed">indeed-search</a></li>
+                        <li><a href="#cli-glassdoor">glassdoor-search</a></li>
+                        <li><a href="#cli-stepstone">stepstone-search</a></li>
+                        <li><a href="#cli-pakistan">pakistan-search</a></li>
+                        <li><a href="#cli-india">india-search</a></li>
+
+                        <li class="nav-section">Resources</li>
+                        <li><a href="#faq">FAQ</a></li>
+                        <li><a href="#troubleshooting">Troubleshooting</a></li>
+                    </ul>
+                </aside>
+
+                <div class="docs-content">
+                    <h1>Documentation</h1>
+                    <p>Complete guide to using AI Job Search for your job application workflow.</p>
+
+                    <h2 id="installation">Installation</h2>
+
+                    <h3>Option 1: Download Standalone</h3>
+                    <p>Download pre-built executables from the <a href="download.html">download page</a>.</p>
+
+                    <h3>Option 2: Install from Source</h3>
+                    <pre><code># Clone the repository
+git clone https://github.com/MadsLorentzen/ai-job-search.git
+cd ai-job-search
+
+# Install dependencies
+bun install
+
+# Build standalone executables
+./build.sh</code></pre>
+
+                    <h3>Option 3: Claude Code (Recommended)</h3>
+                    <p>Clone this repo and use it directly with Claude Code for the full AI experience:</p>
+                    <pre><code>git clone https://github.com/MadsLorentzen/ai-job-search.git
+cd ai-job-search
+claude</code></pre>
+
+                    <h2 id="setup">Setup</h2>
+                    <p>Run the setup command to configure your profile:</p>
+                    <pre><code>/setup</code></pre>
+
+                    <p>This will prompt you for:</p>
+                    <ul>
+                        <li>Full name</li>
+                        <li>Email address</li>
+                        <li>Phone number</li>
+                        <li>Location</li>
+                        <li>Target job titles</li>
+                        <li>Target locations</li>
+                        <li>Skills and technologies</li>
+                        <li>Experience level</li>
+                    </ul>
+
+                    <div class="callout">
+                        <strong>Tip:</strong> Your profile is saved to <code>data/profile.json</code> and used to tailor all applications.
+                    </div>
+
+                    <h2 id="configuration">Configuration</h2>
+                    <p>Configuration files are stored in:</p>
+                    <ul>
+                        <li><code>data/profile.json</code> - Your candidate profile</li>
+                        <li><code>data/privacy.json</code> - Privacy settings</li>
+                        <li><code>data/jobs/</code> - Scraped job postings</li>
+                        <li><code>data/applications/</code> - Generated applications</li>
+                    </ul>
+
+                    <h2 id="cmd-setup">/setup</h2>
+                    <p>Configure your candidate profile and preferences.</p>
+                    <pre><code>/setup</code></pre>
+                    <p>Creates or updates <code>data/profile.json</code> with your information.</p>
+
+                    <h2 id="cmd-scrape">/scrape</h2>
+                    <p>Search job portals for matching positions.</p>
+                    <pre><code>/scrape
+/scrape LinkedIn remote software jobs in Copenhagen
+/scrape for senior data engineer positions</code></pre>
+                    <p>Deduplicates across runs and saves results to <code>data/jobs/</code>.</p>
+
+                    <h2 id="cmd-apply">/apply</h2>
+                    <p>Generate tailored CV and cover letter for a specific job.</p>
+                    <pre><code>/apply https://linkedin.com/jobs/view/12345
+/apply https://jobindex.dk/job/67890</code></pre>
+                    <p>Evaluates fit score and generates ATS-optimized documents.</p>
+
+                    <h2 id="cmd-rank">/rank</h2>
+                    <p>Score and rank job matches based on your profile.</p>
+                    <pre><code>/rank</code></pre>
+
+                    <h2 id="cmd-outcome">/outcome</h2>
+                    <p>Track and analyze your application results.</p>
+                    <pre><code>/outcome</code></pre>
+
+                    <h2 id="cmd-interview">/interview</h2>
+                    <p>Prepare for upcoming interviews with mock Q&A.</p>
+                    <pre><code>/interview for Google Software Engineer position</code></pre>
+
+                    <h2 id="cmd-compare">/compare-offers</h2>
+                    <p>Compare multiple job offers side by side.</p>
+                    <pre><code>/compare-offers</code></pre>
+                    <p>Analyzes salary, benefits, growth potential, and culture fit.</p>
+
+                    <h2 id="cmd-salary">/salary-negotiate</h2>
+                    <p>Get negotiation scripts and strategies.</p>
+                    <pre><code>/salary-negotiate for senior developer position</code></pre>
+
+                    <h2 id="cmd-company">/company-research</h2>
+                    <p>Deep dive into company analysis.</p>
+                    <pre><code>/company-research Google</code></pre>
+
+                    <h2 id="cmd-networking">/networking</h2>
+                    <p>Build professional connections at target companies.</p>
+                    <pre><code>/networking at Microsoft</code></pre>
+
+                    <h2 id="cmd-referral">/referral</h2>
+                    <p>Find connections who can refer you.</p>
+                    <pre><code>/referral at Amazon</code></pre>
+
+                    <h2 id="cmd-followup">/followup</h2>
+                    <p>Generate follow-up email templates.</p>
+                    <pre><code>/followup after interview at Netflix</code></pre>
+
+                    <h2 id="cmd-portfolio">/portfolio</h2>
+                    <p>Create portfolio projects showcasing relevant skills.</p>
+                    <pre><code>/portfolio for machine learning engineer role</code></pre>
+
+                    <h2 id="cmd-interview-scheduler">/interview-scheduler</h2>
+                    <p>Manage and schedule interview preparation sessions.</p>
+                    <pre><code>/interview-scheduler</code></pre>
+
+                    <h2 id="cmd-career-path">/career-path</h2>
+                    <p>Plan your career trajectory and growth plan.</p>
+                    <pre><code>/career-path from junior to senior developer</code></pre>
+
+                    <h2 id="cli-indeed">indeed-search</h2>
+                    <p>Search Indeed job listings from the command line.</p>
+                    <pre><code>indeed-search "software engineer" "New York"
+indeed-search --remote python developer</code></pre>
+
+                    <h2 id="cli-glassdoor">glassdoor-search</h2>
+                    <p>Search Glassdoor with company reviews and salary data.</p>
+                    <pre><code>glassdoor-search "product manager" "San Francisco"</code></pre>
+
+                    <h2 id="cli-stepstone">stepstone-search</h2>
+                    <p>Search European job markets (Germany, Netherlands, etc.).</p>
+                    <pre><code>stepstone-search "data scientist" "Berlin"</code></pre>
+
+                    <h2 id="cli-pakistan">pakistan-search</h2>
+                    <p>Search Pakistani job portals (Rozee.pk, Mustakbil).</p>
+                    <pre><code>pakistan-search "software engineer" "Karachi"</code></pre>
+
+                    <h2 id="cli-india">india-search</h2>
+                    <p>Search Indian job portals (Naukri.com, etc.).</p>
+                    <pre><code>india-search "data analyst" "Bangalore"</code></pre>
+
+                    <h2 id="faq">FAQ</h2>
+
+                    <h3>Do I need an API key?</h3>
+                    <p>AI Job Search works with Claude Code. The AI features require a Claude Code subscription or API key.</p>
+
+                    <h3>Which job portals are supported?</h3>
+                    <p>We support 12 job portals including LinkedIn, Indeed, Glassdoor, StepStone, Jobindex, Jobnet, and more.</p>
+
+                    <h3>Is my data private?</h3>
+                    <p>Yes! All data is stored locally on your machine. Nothing is sent to external servers except the job portals you search.</p>
+
+                    <h2 id="troubleshooting">Troubleshooting</h2>
+
+                    <h3>Executable won't run on Windows</h3>
+                    <p>Make sure to extract all files from the ZIP archive before running. Windows SmartScreen may block the first run - click "More info" then "Run anyway".</p>
+
+                    <h3>No jobs found</h3>
+                    <p>Try broadening your search criteria or check if the job portal is accessible from your location.</p>
+
+                    <div class="callout warning">
+                        <strong>Need help?</strong> <a href="https://github.com/MadsLorentzen/ai-job-search/issues">Open an issue on GitHub</a> or start a <a href="https://github.com/MadsLorentzen/ai-job-search/discussions">discussion</a>.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3><i class="fas fa-search"></i> AI Job Search</h3>
+                    <p>The job search that runs on your machine.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html#features">Features</a></li>
+                        <li><a href="index.html#portals">Job Portals</a></li>
+                        <li><a href="index.html#commands">Commands</a></li>
+                        <li><a href="download.html">Download</a></li>
+                        <li><a href="docs.html">Documentation</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://github.com/MadsLorentzen/ai-job-search">GitHub</a></li>
+                        <li><a href="https://github.com/MadsLorentzen/ai-job-search/issues">Report Issue</a></li>
+                        <li><a href="https://github.com/MadsLorentzen/ai-job-search/blob/master/CONTRIBUTING.md">Contributing</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="https://ko-fi.com/madslorentzen">Buy me a coffee</a></li>
+                        <li><a href="https://github.com/MadsLorentzen/ai-job-search/discussions">Discussions</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 AI Job Search. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Active nav link highlighting
+        const sections = document.querySelectorAll('h2[id]');
+        const navLinks = document.querySelectorAll('.docs-nav a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
