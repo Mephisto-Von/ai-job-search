@@ -94,8 +94,8 @@ upskill/*.md
 build/dist/
 build/output/
 build/bundled/
-build/msi/
 build/releases/ai-job-search-*.zip
 build/releases/ai-job-search-*.tar.gz
-# Keep Windows executables
+# Keep Windows executables and MSI
 !build/windows/
+!build/msi/
